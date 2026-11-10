@@ -1,0 +1,18 @@
+/.venv/
+/.idea/
+
+/build/
+/dist/
+
+*.pyc
+__pycache__/
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+.vscode/
+.sublime/
+
+# Benutzerdaten (Decks, Karten, Bilder)
+/data/

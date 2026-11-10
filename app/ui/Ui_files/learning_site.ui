@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>card_learner</class>
+ <widget class="QWidget" name="card_learner">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1149</width>
+    <height>698</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QWidget" name="verticalLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>-1</x>
+     <y>-1</y>
+     <width>1151</width>
+     <height>701</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="central_layout" stretch="0">
+    <item>
+     <layout class="QHBoxLayout" name="central_horizontal_layout" stretch="1,2,1">
+      <item>
+       <layout class="QVBoxLayout" name="left_layout"/>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="central_vertical_layout" stretch="1,10,1,1,10">
+        <item>
+         <widget class="QLabel" name="deck_title">
+          <property name="layoutDirection">
+           <enum>Qt::LayoutDirection::LeftToRight</enum>
+          </property>
+          <property name="text">
+           <string>&lt;Deck&gt;</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="upper_card_layout">
+          <item>
+           <widget class="QGraphicsView" name="upper_card_scene"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="upper_button_layout">
+          <item>
+           <widget class="QPushButton" name="next_card_button">
+            <property name="text">
+             <string>show solution</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="edit_button">
+            <property name="text">
+             <string>edit</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="delete_button">
+            <property name="text">
+             <string>delete button</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="lower_button_layout">
+          <item>
+           <widget class="QPushButton" name="unknown">
+            <property name="text">
+             <string>unknown</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="partially_known_button">
+            <property name="text">
+             <string>known but difficult</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="easily_known_button">
+            <property name="text">
+             <string>easily known</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="lower_card_scene">
+          <item>
+           <widget class="QGraphicsView" name="graphicsView"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="right_layout"/>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
