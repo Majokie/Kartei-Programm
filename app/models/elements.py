@@ -20,6 +20,7 @@ class TextElement:
     y: float = 0.0
     font_size: int = 20
     font_family: str = ""          # empty = default font
+    is_title: bool = False         # True = title field of a study sheet (cannot be moved or deleted)
     id: str = field(default_factory=new_id)
 
 

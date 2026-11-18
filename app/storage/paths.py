@@ -24,3 +24,4 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]   # .../Kartei-Programm
 DATA_DIR = user_data_dir()                 # all user data lives here
 DECKS_DIR = DATA_DIR / "decks"                       # one subfolder per deck
 LEARNBLOCKS_DIR = DATA_DIR / "learnblocks"           # one JSON file per learn block
+FOLDERS_DIR = DATA_DIR / "folders"                   # one subfolder per study folder

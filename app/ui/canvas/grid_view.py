@@ -1,12 +1,20 @@
-"""View for a card page with limited mouse-wheel zoom."""
-from PySide6.QtCore import Qt
+"""View for a card page or study sheet.
+
+- mouse wheel: zoom (with limits)
+- hold the right mouse button: move (pan) the view in any direction
+"""
+from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import QGraphicsView
 
 
 class GridView(QGraphicsView):
-    def __init__(self):
+    def __init__(self, pan_margin: float = 0):
+        """pan_margin: extra space around the page, so it can also be dragged
+        a bit beyond its edges (used for study sheets)."""
         super().__init__()
+        self.pan_margin = pan_margin
+        self._pan_last: QPointF | None = None   # last mouse position while panning
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -29,3 +37,36 @@ class GridView(QGraphicsView):
             self.current_scale /= self.scale_factor
         else:
             super().wheelEvent(event)
+
+    def setScene(self, scene):
+        super().setScene(scene)
+        if scene is not None and self.pan_margin:
+            m = self.pan_margin
+            self.setSceneRect(scene.sceneRect().adjusted(-m, -m, m, m))
+
+    # ---------- Panning with the right mouse button ----------
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.RightButton:
+            self._pan_last = event.position()
+            self.viewport().setCursor(Qt.CursorShape.ClosedHandCursor)
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._pan_last is not None:
+            delta = event.position() - self._pan_last
+            self._pan_last = event.position()
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - round(delta.x()))
+            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - round(delta.y()))
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.RightButton and self._pan_last is not None:
+            self._pan_last = None
+            self.viewport().unsetCursor()
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)

@@ -9,6 +9,7 @@ from app.models.deck import Deck
 from app.models.elements import ImageElement, StrokeElement, TextElement
 from app.models.flashcard import Card, Page
 from app.models.learnblock import CardProgress, LearnBlock
+from app.models.study import StudyFolder, StudySheet
 
 FORMAT_VERSION = 1
 
@@ -95,3 +96,31 @@ def learnblock_from_dict(data: dict) -> LearnBlock:
         progress={card_id: CardProgress(**progress)
                   for card_id, progress in data.get("progress", {}).items()},
     )
+
+
+# ---------- Study folders and sheets ----------
+def sheet_to_dict(sheet: StudySheet) -> dict:
+    return {
+        "version": FORMAT_VERSION,
+        "id": sheet.id,
+        "page": page_to_list(sheet.page),
+    }
+
+
+def sheet_from_dict(data: dict) -> StudySheet:
+    return StudySheet(id=data["id"], page=page_from_list(data.get("page", [])))
+
+
+def folder_to_dict(folder: StudyFolder) -> dict:
+    return {
+        "version": FORMAT_VERSION,
+        "id": folder.id,
+        "name": folder.name,
+        "sheet_order": [sheet.id for sheet in folder.sheets],
+    }
+
+
+def folder_from_dict(data: dict) -> tuple[StudyFolder, list[str]]:
+    """Returns the folder (without sheets yet) and the saved sheet order."""
+    folder = StudyFolder(name=data["name"], id=data["id"])
+    return folder, list(data.get("sheet_order", []))

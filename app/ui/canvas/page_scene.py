@@ -49,7 +49,10 @@ class PageScene(QGraphicsScene):
 
         self.setSceneRect(0, 0, width, height)
         for element in page.elements:   # model -> display
-            self.addItem(make_item(element, image_dir))
+            item = make_item(element, image_dir)
+            if isinstance(item, TextItem) and element.is_title:
+                item.make_title(width - 2 * element.x)   # title of a study sheet
+            self.addItem(item)
 
     # ---------- Tools ----------
     def set_tool(self, tool):
@@ -127,6 +130,8 @@ class PageScene(QGraphicsScene):
     def delete_selected(self):
         for item in self.selectedItems():
             model = getattr(item, "model", None)
+            if getattr(model, "is_title", False):
+                continue                           # the title of a study sheet cannot be deleted
             if model in self.page.elements:
                 self.page.elements.remove(model)   # from the model
             self.removeItem(item)                  # and from the scene

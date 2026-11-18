@@ -66,6 +66,13 @@ class TextItem(_PositionSync, QGraphicsTextItem):
         self.model.text = self.toPlainText()
         _notify_changed(self)
 
+    def make_title(self, width: float):
+        """Title field of a study sheet: can be selected and edited, but not moved.
+        Long titles wrap at the given width. (Deleting is prevented by the scene.)"""
+        self.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable
+                      | QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges)
+        self.setTextWidth(width)
+
     def _apply_font(self):
         font = QFont(self.model.font_family) if self.model.font_family else QFont()
         font.setPointSize(int(self.model.font_size))

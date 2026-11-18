@@ -11,12 +11,15 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 from app.models.deck import Deck
 from app.models.flashcard import Card
 from app.models.learnblock import LearnBlock
-from app.storage.repository import DeckRepository, LearnBlockRepository
+from app.models.study import StudyFolder
+from app.storage.repository import DeckRepository, LearnBlockRepository, StudyFolderRepository
 from app.ui.sites.card_editor import CardEditor
 from app.ui.sites.deck_overview import DeckOverview
+from app.ui.sites.folder_overview import FolderOverview
 from app.ui.sites.learn_overview import LearnOverview
 from app.ui.sites.learn_session import LearnSession
 from app.ui.sites.mainmenu import MainMenu
+from app.ui.sites.sheet_editor import SheetEditor
 
 
 class MainWindow(QMainWindow):
@@ -28,7 +31,9 @@ class MainWindow(QMainWindow):
 
         self.repository = DeckRepository()              # loading and saving decks
         self.block_repository = LearnBlockRepository()  # loading and saving learn blocks
+        self.folder_repository = StudyFolderRepository()  # loading and saving study folders/sheets
         self.card_editor: CardEditor | None = None
+        self.sheet_editor: SheetEditor | None = None
 
         self.stacked_widget = QStackedWidget()
         self.main_menu = MainMenu()                          # Index 0
@@ -39,11 +44,14 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(self.learn_overview)
         self.learn_session = LearnSession(self.repository, self.block_repository)  # Index 3
         self.stacked_widget.addWidget(self.learn_session)
+        self.folder_overview = FolderOverview(self.folder_repository)  # Index 4
+        self.stacked_widget.addWidget(self.folder_overview)
         self.setCentralWidget(self.stacked_widget)
 
         """Button connections"""
         self.main_menu.decks_button.clicked.connect(self.show_decks)
         self.main_menu.learning_button.clicked.connect(self.show_learning)
+        self.main_menu.study_sheets_button.clicked.connect(self.show_folders)
         self.main_menu.exit_button.clicked.connect(self.close)
         self.deck_overview.back_button.clicked.connect(self.show_main_menu)
         self.deck_overview.edit_deck_signal.connect(self.show_card_editor)
@@ -55,6 +63,9 @@ class MainWindow(QMainWindow):
         self.learn_overview.learn_block_signal.connect(self.start_learning)
         self.learn_session.back_signal.connect(self.show_learning)
         self.learn_session.edit_card_signal.connect(self.edit_card_from_learning)
+        self.folder_overview.back_button.clicked.connect(self.show_main_menu)
+        self.folder_overview.edit_folder_signal.connect(self.show_sheet_editor)
+        self.folder_overview.folder_deleting_signal.connect(self.close_editor_for_folder)
 
     @Slot()
     def show_decks(self):
@@ -69,6 +80,33 @@ class MainWindow(QMainWindow):
         """Show the learning page inside the main window (no new window)"""
         self.learn_session.start(block, deck)
         self.stacked_widget.setCurrentIndex(3)
+
+    @Slot()
+    def show_folders(self):
+        self.stacked_widget.setCurrentIndex(4)
+
+    @Slot(object)
+    def show_sheet_editor(self, folder: StudyFolder):
+        """Opens the study sheet editor for a folder (or brings the open one to the front)"""
+        if self.sheet_editor is not None and self.sheet_editor.isVisible():
+            if self.sheet_editor.folder is folder:
+                self.sheet_editor.raise_()
+                self.sheet_editor.activateWindow()
+                return
+            if not self.sheet_editor.close():   # asks about unsaved changes
+                return
+        self.sheet_editor = SheetEditor(folder, self.folder_repository)
+        self.sheet_editor.closed_signal.connect(self.show_folders)
+        self.sheet_editor.setMinimumSize(1100, 700)
+        self.sheet_editor.show()
+
+    @Slot(object)
+    def close_editor_for_folder(self, folder: StudyFolder):
+        """Closes the study sheet editor without asking when its folder is being deleted"""
+        if self.sheet_editor is not None and self.sheet_editor.folder is folder:
+            self.sheet_editor.discard_on_close = True
+            self.sheet_editor.close()
+            self.sheet_editor = None
 
     @Slot()
     def show_main_menu(self):
@@ -116,10 +154,11 @@ class MainWindow(QMainWindow):
             self.card_editor = None
 
     def closeEvent(self, event):
-        # close an open editor first so that unsaved changes are handled
-        if self.card_editor is not None and self.card_editor.isVisible() and not self.card_editor.close():
-            event.ignore()
-            return
+        # close open editors first so that unsaved changes are handled
+        for editor in (self.card_editor, self.sheet_editor):
+            if editor is not None and editor.isVisible() and not editor.close():
+                event.ignore()
+                return
         event.accept()
 
 

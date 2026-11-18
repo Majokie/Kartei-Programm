@@ -59,7 +59,7 @@ class MainMenu(QWidget):
         self.vertical_button_layout.setSpacing(30)
         self.vertical_button_layout.setContentsMargins(-1, 60, -1, 80)
 
-        """Adds the three buttons of the main menu"""
+        """Adds the buttons of the main menu"""
         self.learning_button = QPushButton(self)
         self.learning_button.setText("Learning")
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -69,6 +69,13 @@ class MainMenu(QWidget):
         self.learning_button.setSizePolicy(sizePolicy1)
     
         self.vertical_button_layout.addWidget(self.learning_button)
+
+        self.study_sheets_button = QPushButton(self)
+        self.study_sheets_button.setText("Study Sheets")
+        sizePolicy1.setHeightForWidth(self.study_sheets_button.sizePolicy().hasHeightForWidth())
+        self.study_sheets_button.setSizePolicy(sizePolicy1)
+
+        self.vertical_button_layout.addWidget(self.study_sheets_button)
     
         self.decks_button = QPushButton(self)
         self.decks_button.setText("Decks")

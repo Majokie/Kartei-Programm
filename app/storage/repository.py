@@ -16,8 +16,9 @@ from app.models.deck import Deck
 from app.models.elements import new_id
 from app.models.flashcard import Card
 from app.models.learnblock import LearnBlock
+from app.models.study import StudyFolder, StudySheet
 from app.storage import serializer
-from app.storage.paths import DECKS_DIR, LEARNBLOCKS_DIR
+from app.storage.paths import DECKS_DIR, FOLDERS_DIR, LEARNBLOCKS_DIR
 
 
 class DeckRepository:
@@ -146,3 +147,87 @@ class LearnBlockRepository:
         for block_file in sorted(self.base_dir.glob("*.json")):
             blocks.append(serializer.learnblock_from_dict(DeckRepository._read_json(block_file)))
         return blocks
+
+
+class StudyFolderRepository:
+    """Loading and saving study folders and their sheets.
+
+    Layout on disk (inside FOLDERS_DIR):
+        <folder-id>/folder.json            name and order of the sheets
+        <folder-id>/sheets/<sheet-id>.json
+        <folder-id>/images/<image>.png
+    """
+    def __init__(self, base_dir: Path = FOLDERS_DIR):
+        self.base_dir = Path(base_dir)
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+
+    # ---------- Folders on disk ----------
+    def folder_dir(self, folder: StudyFolder) -> Path:
+        return self.base_dir / folder.id
+
+    def sheets_dir(self, folder: StudyFolder) -> Path:
+        return self.folder_dir(folder) / "sheets"
+
+    def images_dir(self, folder: StudyFolder) -> Path:
+        return self.folder_dir(folder) / "images"
+
+    # ---------- Study folders ----------
+    def create_folder(self, name: str) -> StudyFolder:
+        folder = StudyFolder(name=name)
+        self.save_folder(folder)
+        return folder
+
+    def save_folder(self, folder: StudyFolder) -> None:
+        """Saves only the header data (name, order). Also used for renaming."""
+        self.sheets_dir(folder).mkdir(parents=True, exist_ok=True)
+        self.images_dir(folder).mkdir(parents=True, exist_ok=True)
+        DeckRepository._write_json(self.folder_dir(folder) / "folder.json", serializer.folder_to_dict(folder))
+
+    def delete_folder(self, folder: StudyFolder) -> None:
+        """Permanently deletes the folder with all sheets and images from disk."""
+        if self.folder_dir(folder).exists():
+            shutil.rmtree(self.folder_dir(folder))
+
+    def load_all(self) -> list[StudyFolder]:
+        folders = []
+        for directory in sorted(self.base_dir.iterdir()):
+            folder_file = directory / "folder.json"
+            if directory.is_dir() and folder_file.exists():
+                folders.append(self._load_folder(folder_file))
+        return folders
+
+    def _load_folder(self, folder_file: Path) -> StudyFolder:
+        folder, sheet_order = serializer.folder_from_dict(DeckRepository._read_json(folder_file))
+        sheets = {}
+        for sheet_file in self.sheets_dir(folder).glob("*.json"):
+            sheet = serializer.sheet_from_dict(DeckRepository._read_json(sheet_file))
+            sheets[sheet.id] = sheet
+        # saved order first (= order of creation), then any remaining sheets
+        for sheet_id in sheet_order:
+            if sheet_id in sheets:
+                folder.sheets.append(sheets.pop(sheet_id))
+        folder.sheets.extend(sheets.values())
+        return folder
+
+    # ---------- Sheets ----------
+    def save_sheet(self, folder: StudyFolder, sheet: StudySheet) -> None:
+        """Puts the sheet into the folder (new or replaced) and writes it to disk."""
+        folder.put_sheet(sheet)
+        self.sheets_dir(folder).mkdir(parents=True, exist_ok=True)
+        DeckRepository._write_json(self.sheets_dir(folder) / f"{sheet.id}.json", serializer.sheet_to_dict(sheet))
+        self.save_folder(folder)
+
+    def delete_sheet(self, folder: StudyFolder, sheet: StudySheet) -> None:
+        folder.remove_sheet(sheet.id)
+        sheet_file = self.sheets_dir(folder) / f"{sheet.id}.json"
+        if sheet_file.exists():
+            sheet_file.unlink()
+        self.save_folder(folder)
+
+    # ---------- Images ----------
+    def new_image_path(self, folder: StudyFolder) -> tuple[str, Path]:
+        """Returns a free file name and the full path for a new image."""
+        self.images_dir(folder).mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{timestamp}_{new_id()[:8]}.png"
+        return filename, self.images_dir(folder) / filename
