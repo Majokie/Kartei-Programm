@@ -1,8 +1,11 @@
 /.venv/
 /.idea/
 
+/.build/
 /build/
 /dist/
+
+/installer/Output/
 
 *.pyc
 __pycache__/
